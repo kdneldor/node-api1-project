@@ -9,6 +9,12 @@ server.use(express.json());
 server.get("/users", (req, res) => {
   const users = db.getUsers();
   res.json(users);
+
+  if (!users) {
+    res.status(500).json({
+      errorMessage: "The users information could not be retrieved.",
+    });
+  }
 });
 
 server.get("/users/:id", (req, res) => {
@@ -27,18 +33,23 @@ server.get("/users/:id", (req, res) => {
 
 // POST REQUEST
 server.post("/users", (req, res) => {
+  const { name, bio } = req.body;
+  if (name && bio) {
     const newUser = db.createUser({
-        name: req.body.name,
-        bio: req.body.bio,
-    })
-    res.status(201).json(newUser)
-
-   if (!newUser) {
-       res.status(400).json({
-           errorMessage: "Please provide name and bio for the user."
-       })
-   }
-})
+      name: req.body.name,
+      bio: req.body.bio,
+    });
+    res.status(201).json(newUser).end();
+  } else if (!name || !bio) {
+    res.status(400).json({
+      message: "Please provide name and bio for the user.",
+    });
+  } else {
+    res.status(500).json({
+      message: "There was an error while saving the user to the database.",
+    });
+  }
+});
 // POST REQUEST
 
 // DELETE REQUEST
@@ -47,43 +58,51 @@ server.delete("/users/:id", (req, res) => {
   const user = db.getUserById(id);
 
   if (!user) {
-      res.status(404).json({
-          message: "The user with the specified ID does not exist."
-      })
+    res.status(404).json({
+      message: "The user with the specified ID does not exist.",
+    });
   }
 
-  const removeUser = db.deleteUser(id)
+  const removeUser = db.deleteUser(id);
 
   if (!removeUser) {
-      res.status(204).json({
-          message: "User was deleted.",
-          user
-      })
+    res.status(200).json({
+      message: "User was deleted.",
+      user,
+    });
+  } else {
+    res.status(500).json({
+      errorMessage: "The user could not be removed",
+    });
   }
-
-  else {
-      res.status(500).json({
-          errorMessage: "The user could not be removed"
-      })
-  }
-
-  
 });
 // DELETE REQUEST
 
 // PUT REQUEST
 server.put("/users/:id", (req, res) => {
-  const id = req.params.id;
-  const user = db.getUserById(id);
+  const userId = req.params.id;
+  const updatedUser = {
+    name: req.body.name,
+    bio: req.body.bio,
+  };
+  const user = db.updateUser(userId, updatedUser);
 
-  if (user) {
-    const updateUser = db.updateUser(id, {
-      name: req.body.name,
+  if (!updatedUser.name || !updatedUser.bio) {
+    res.status(400).json({
+      errorMessage: "Please provide name and bio for the user.",
     });
-    res.json(updateUser);
-  } else {
+  } else if (!user) {
     res.status(404).json({
-      message: "The user with the specified ID does not exist",
+      message: "The user with the specified ID does not exist.",
+    });
+  } else if (user) {
+    res.status(200).json({
+      message: "Successfully updated user.",
+      user,
+    });
+  } else {
+    res.status(500).json({
+      errorMessage: "The user information could not be modified.",
     });
   }
 });
