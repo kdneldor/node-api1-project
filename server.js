@@ -15,9 +15,9 @@ server.get("/users", (req, res) => {
   if (users) {
     res.json(users);
   } else {
-      res.status(500).json({
-          errorMessage: "The users information could not be retrieved."
-      })
+    res.status(500).json({
+      errorMessage: "The users information could not be retrieved.",
+    });
   }
 });
 
@@ -27,9 +27,13 @@ server.get("/users/:id", (req, res) => {
 
   if (user) {
     res.json(user);
-  } else {
+  } else if (!user) {
     res.status(404).json({
-      message: "Can't find nuthin",
+      message: "The user with the specified ID does not exist",
+    });
+  } else {
+    res.status(500).json({
+      errorMessage: "The user information could not be retrieved.",
     });
   }
 });
@@ -61,12 +65,17 @@ server.put("/users/:id", (req, res) => {
   if (user) {
     const updatedUser = db.updateUser(user.id, {
       name: req.body.name || user.name,
+      bio: req.body.bio || user.bio,
     });
 
-    res.json(updatedUser);
-  } else {
+    res.status(200).json(updatedUser);
+  } else if (!user) {
     res.status(404).json({
-      message: "User not found",
+      message: "The user with the specified ID does not exist",
+    });
+  } else {
+    res.status(500).json({
+      errorMessage: "The user information could not be modified.",
     });
   }
 });
@@ -81,9 +90,13 @@ server.delete("/users/:id", (req, res) => {
     // res.json({
     //     message: "User deleted",
     // })
-  } else {
+  } else if (!user) {
     res.status(404).json({
-      message: "User not found",
+      message: "The user with the specified ID does not exist.",
+    });
+  } else {
+    res.status(500).json({
+      errorMessage: "The user could not be removed",
     });
   }
 });
